@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Grabu – Ride Fast, Ride Smart</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0a0a0f;
+      --card: #13131a;
+      --card2: #1c1c27;
+      --accent: #f5c518;
+      --accent2: #ff6b35;
+      --text: #f0f0f5;
+      --muted: #7a7a9a;
+      --green: #22c55e;
+      --border: #2a2a3a;
+      --radius: 18px;
+    }
+
+    body {
+      font-family: 'Outfit', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      padding: 0;
+    }
+
+    .phone {
+      width: 100%;
+      max-width: 420px;
+      min-height: 100vh;
+      background: var(--bg);
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* ---- SCREENS ---- */
+    .screen { display: none; flex-direction: column; min-height: 100vh; animation: fadeIn 0.35s ease; }
+    .screen.active { display: flex; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* ---- SPLASH ---- */
+    #splash {
+      background: linear-gradient(160deg, #0a0a0f 0%, #181820 60%, #0a0a0f 100%);
+      justify-content: center; align-items: center; gap: 20px;
+    }
+    .splash-logo { text-align: center; }
+    .splash-logo .logo-text {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 72px;
+      letter-spacing: 4px;
+      color: var(--accent);
+      line-height: 1;
+      text-shadow: 0 0 60px rgba(245,197,24,0.4);
+    }
+    .splash-logo .tagline { font-size: 14px; color: var(--muted); letter-spacing: 3px; text-transform: uppercase; margin-top: 6px; }
+    .bike-icon { font-size: 64px; animation: float 2s ease-in-out infinite; }
+    @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-12px)} }
+    .splash-btn {
+      margin-top: 40px;
+      background: var(--accent);
+      color: #000;
+      border: none;
+      padding: 16px 48px;
+      border-radius: 50px;
+      font-family: 'Outfit', sans-serif;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      letter-spacing: 1px;
+      box-shadow: 0 8px 32px rgba(245,197,24,0.35);
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    .splash-btn:hover { transform: scale(1.04); box-shadow: 0 12px 40px rgba(245,197,24,0.5); }
+    .dots { display: flex; gap: 8px; margin-top: 16px; }
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border); }
+    .dot.active { background: var(--accent); width: 24px; border-radius: 4px; }
+
+    /* ---- HOME ---- */
+    #home { background: var(--bg); }
+    .home-header {
+      padding: 52px 24px 20px;
+      background: linear-gradient(180deg, #13131a 0%, transparent 100%);
+    }
+    .home-header .greeting { font-size: 13px; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; }
+    .home-header .name { font-family: 'Bebas Neue', sans-serif; font-size: 36px; color: var(--text); letter-spacing: 2px; }
+    .home-header .name span { color: var(--accent); }
+    .header-row { display: flex; justify-content: space-between; align-items: flex-start; }
+    .avatar { width: 44px; height: 44px; border-radius: 50%; background: var(--accent); display: flex; align-items: center; justify-content: center; font-weight: 700; color: #000; font-size: 18px; }
+
+    .map-area {
+      margin: 0 20px;
+      border-radius: var(--radius);
+      height: 190px;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      position: relative;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+    .map-grid {
+      position: absolute; inset: 0;
+      background-image:
+        linear-gradient(rgba(245,197,24,0.06) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(245,197,24,0.06) 1px, transparent 1px);
+      background-size: 32px 32px;
+    }
+    .map-road-h {
+      position: absolute; height: 3px; background: rgba(255,255,255,0.08);
+      left: 0; right: 0;
+    }
+    .map-road-v {
+      position: absolute; width: 3px; background: rgba(255,255,255,0.08);
+      top: 0; bottom: 0;
+    }
+    .map-pin {
+      position: absolute;
+      font-size: 28px;
+      transform: translate(-50%, -100%);
+      filter: drop-shadow(0 4px 8px rgba(0,0,0,0.5));
+      animation: pinPulse 2s ease-in-out infinite;
+    }
+    @keyframes pinPulse { 0%,100%{transform:translate(-50%,-100%) scale(1)} 50%{transform:translate(-50%,-110%) scale(1.1)} }
+    .map-pin.you { left: 35%; top: 55%; }
+    .map-pin.dest { left: 72%; top: 35%; }
+    .map-route {
+      position: absolute;
+      left: 35%; top: 55%;
+      width: 120px; height: 2px;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      transform-origin: left center;
+      transform: rotate(-25deg);
+      border-radius: 2px;
+    }
+    .map-route::after {
+      content: '';
+      position: absolute;
+      right: -6px; top: -4px;
+      width: 10px; height: 10px;
+      background: var(--accent2);
+      border-radius: 50%;
+      box-shadow: 0 0 12px var(--accent2);
+    }
+    .map-moving-bike {
+      position: absolute;
+      left: 50%; top: 43%;
+      font-size: 18px;
+      animation: moveBike 3s ease-in-out infinite;
+    }
+    @keyframes moveBike {
+      0%{left:38%;top:52%} 50%{left:55%;top:46%} 100%{left:38%;top:52%}
+    }
+    .map-label {
+      position: absolute; bottom: 12px; left: 12px;
+      background: rgba(0,0,0,0.6); backdrop-filter: blur(8px);
+      border-radius: 8px; padding: 6px 12px;
+      font-size: 11px; color: var(--muted); display: flex; align-items: center; gap: 6px;
+    }
+    .map-label .live-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); animation: blink 1s infinite; }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+    .section-title { font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); padding: 20px 24px 10px; }
+
+    .location-bar {
+      margin: 16px 20px 0;
+      background: var(--card);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      overflow: hidden;
+    }
+    .loc-row {
+      display: flex; align-items: center; gap: 12px;
+      padding: 14px 16px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .loc-row:hover { background: var(--card2); }
+    .loc-row + .loc-row { border-top: 1px solid var(--border); }
+    .loc-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .loc-dot.green { background: var(--green); box-shadow: 0 0 8px var(--green); }
+    .loc-dot.red { background: var(--accent2); box-shadow: 0 0 8px var(--accent2); }
+    .loc-text { flex: 1; }
+    .loc-label { font-size: 11px; color: var(--muted); }
+    .loc-value { font-size: 14px; font-weight: 500; color: var(--text); margin-top: 2px; }
+    .loc-arrow { color: var(--muted); font-size: 18px; }
+
+    .rides-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      gap: 12px; padding: 0 20px;
+    }
+    .ride-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px 10px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      position: relative;
+      overflow: hidden;
+    }
+    .ride-card:hover, .ride-card.selected {
+      border-color: var(--accent);
+      background: var(--card2);
+      transform: translateY(-2px);
+    }
+    .ride-card.selected::after {
+      content: '✓';
+      position: absolute; top: 8px; right: 10px;
+      background: var(--accent); color: #000;
+      width: 18px; height: 18px; border-radius: 50%;
+      font-size: 10px; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .ride-icon { font-size: 32px; margin-bottom: 8px; }
+    .ride-name { font-size: 13px; font-weight: 600; color: var(--text); }
+    .ride-price { font-size: 12px; color: var(--accent); margin-top: 4px; font-weight: 500; }
+    .ride-eta { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+    .book-btn {
+      margin: 20px;
+      background: var(--accent);
+      color: #000;
+      border: none;
+      padding: 18px;
+      border-radius: var(--radius);
+      font-family: 'Outfit', sans-serif;
+      font-size: 16px;
+      font-weight: 700;
+      width: calc(100% - 40px);
+      cursor: pointer;
+      letter-spacing: 1px;
+      box-shadow: 0 8px 24px rgba(245,197,24,0.3);
+      transition: all 0.2s;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .book-btn:hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(245,197,24,0.45); }
+    .book-btn:disabled { background: var(--border); color: var(--muted); box-shadow: none; transform: none; cursor: not-allowed; }
+
+    .promo-bar {
+      margin: 0 20px 20px;
+      background: linear-gradient(135deg, #1a1a2e, #0f3460);
+      border: 1px solid rgba(245,197,24,0.2);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      display: flex; align-items: center; gap: 12px;
+    }
+    .promo-icon { font-size: 28px; }
+    .promo-text .promo-title { font-size: 13px; font-weight: 600; color: var(--accent); }
+    .promo-text .promo-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+    .promo-code { margin-left: auto; background: var(--accent); color: #000; padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: 700; letter-spacing: 1px; }
+
+    /* ---- MATCHING ---- */
+    #matching { justify-content: center; align-items: center; gap: 0; }
+    .matching-bg {
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse at center, #1a1a2e 0%, #0a0a0f 70%);
+    }
+    .matching-content { position: relative; z-index: 1; text-align: center; padding: 40px 30px; width: 100%; }
+    .pulse-rings {
+      position: relative; width: 160px; height: 160px;
+      margin: 0 auto 32px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .ring {
+      position: absolute;
+      border-radius: 50%;
+      border: 2px solid var(--accent);
+      animation: ripple 2s ease-out infinite;
+    }
+    .ring:nth-child(1) { width: 80px; height: 80px; }
+    .ring:nth-child(2) { width: 120px; height: 120px; animation-delay: 0.5s; opacity: 0.6; }
+    .ring:nth-child(3) { width: 160px; height: 160px; animation-delay: 1s; opacity: 0.3; }
+    @keyframes ripple {
+      0% { transform: scale(0.8); opacity: 1; }
+      100% { transform: scale(1.2); opacity: 0; }
+    }
+    .center-bike { font-size: 48px; position: relative; z-index: 2; animation: spin 0.5s ease infinite alternate; }
+    @keyframes spin { from{transform:rotate(-5deg)} to{transform:rotate(5deg)} }
+    .matching-title { font-family: 'Bebas Neue', sans-serif; font-size: 40px; letter-spacing: 3px; color: var(--accent); }
+    .matching-sub { font-size: 14px; color: var(--muted); margin-top: 8px; }
+    .matching-steps {
+      margin: 32px 0;
+      display: flex; flex-direction: column; gap: 12px;
+    }
+    .m-step {
+      background: var(--card);
+      border-radius: 12px;
+      padding: 14px 16px;
+      display: flex; align-items: center; gap: 12px;
+      border: 1px solid var(--border);
+      text-align: left;
+      transition: all 0.3s;
+    }
+    .m-step.done { border-color: var(--green); }
+    .m-step.active { border-color: var(--accent); background: var(--card2); }
+    .m-step-icon { font-size: 20px; }
+    .m-step-text { font-size: 13px; color: var(--muted); }
+    .m-step.done .m-step-text { color: var(--green); }
+    .m-step.active .m-step-text { color: var(--text); }
+    .m-step-check { margin-left: auto; font-size: 16px; }
+
+    /* ---- DRIVER ---- */
+    #driver { }
+    .driver-header {
+      background: linear-gradient(180deg, #13131a 0%, var(--bg) 100%);
+      padding: 52px 24px 20px;
+    }
+    .driver-header .trip-label { font-size: 11px; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; }
+    .driver-header .trip-status { font-family: 'Bebas Neue', sans-serif; font-size: 32px; color: var(--green); letter-spacing: 2px; margin-top: 4px; }
+
+    .driver-card {
+      margin: 0 20px;
+      background: var(--card);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      overflow: hidden;
+    }
+    .driver-top {
+      padding: 20px;
+      display: flex; align-items: center; gap: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .driver-avatar {
+      width: 56px; height: 56px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 26px;
+    }
+    .driver-info .driver-name { font-size: 17px; font-weight: 600; }
+    .driver-info .driver-meta { font-size: 12px; color: var(--muted); margin-top: 4px; display: flex; gap: 10px; align-items: center; }
+    .star { color: var(--accent); }
+    .driver-badge {
+      margin-left: auto;
+      background: rgba(34,197,94,0.15);
+      border: 1px solid var(--green);
+      color: var(--green);
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 1px;
+    }
+    .bike-info {
+      padding: 16px 20px;
+      display: flex; align-items: center; gap: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+    .bike-info .bike-icon-sm { font-size: 28px; }
+    .bike-info .bike-details .bike-model { font-size: 14px; font-weight: 500; }
+    .bike-info .bike-details .bike-plate {
+      font-size: 13px; color: var(--accent); font-weight: 700;
+      background: rgba(245,197,24,0.1); border: 1px solid rgba(245,197,24,0.3);
+      padding: 2px 8px; border-radius: 4px; display: inline-block; margin-top: 4px;
+    }
+    .eta-strip {
+      padding: 16px 20px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .eta-item { text-align: center; }
+    .eta-item .eta-val { font-family: 'Bebas Neue', sans-serif; font-size: 28px; color: var(--accent); }
+    .eta-item .eta-label { font-size: 11px; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; }
+    .eta-divider { width: 1px; height: 40px; background: var(--border); }
+
+    .action-row {
+      display: flex; gap: 12px; padding: 0 20px; margin-top: 16px;
+    }
+    .action-btn {
+      flex: 1;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      color: var(--text);
+    }
+    .action-btn:hover { border-color: var(--accent); background: var(--card2); }
+    .action-btn .action-icon { font-size: 24px; margin-bottom: 6px; }
+    .action-btn .action-label { font-size: 12px; color: var(--muted); }
+
+    .track-map {
+      margin: 20px;
+      border-radius: var(--radius);
+      height: 160px;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      position: relative; overflow: hidden;
+      border: 1px solid var(--border);
+    }
+    .track-map .map-grid { position: absolute; inset: 0; background-image: linear-gradient(rgba(245,197,24,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(245,197,24,0.05) 1px, transparent 1px); background-size: 28px 28px; }
+    .track-pin { position: absolute; font-size: 22px; }
+    .track-bike { position: absolute; font-size: 20px; left: 48%; top: 42%; animation: trackMove 3s ease-in-out infinite; }
+    @keyframes trackMove { 0%{left:42%;top:50%} 50%{left:52%;top:40%} 100%{left:42%;top:50%} }
+
+    .cancel-btn {
+      margin: 0 20px 30px;
+      background: transparent;
+      border: 1px solid rgba(255,107,53,0.4);
+      color: var(--accent2);
+      padding: 14px;
+      border-radius: var(--radius);
+      width: calc(100% - 40px);
+      cursor: pointer;
+      font-family: 'Outfit', sans-serif;
+      font-size: 14px;
+      font-weight: 500;
+      transition: all 0.2s;
+    }
+    .cancel-btn:hover { background: rgba(255,107,53,0.1); border-color: var(--accent2); }
+
+    /* ---- RATING ---- */
+    #rating { justify-content: center; align-items: center; }
+    .rating-content { padding: 40px 28px; width: 100%; text-align: center; }
+    .success-icon { font-size: 72px; margin-bottom: 16px; animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+    @keyframes popIn { from{transform:scale(0)} to{transform:scale(1)} }
+    .rating-title { font-family: 'Bebas Neue', sans-serif; font-size: 44px; letter-spacing: 3px; color: var(--accent); }
+    .rating-sub { font-size: 14px; color: var(--muted); margin-top: 8px; }
+    .trip-summary {
+      margin: 28px 0;
+      background: var(--card);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      overflow: hidden;
+    }
+    .summary-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 14px 20px;
+    }
+    .summary-row + .summary-row { border-top: 1px solid var(--border); }
+    .summary-label { font-size: 13px; color: var(--muted); }
+    .summary-val { font-size: 14px; font-weight: 600; }
+    .summary-val.big { font-family: 'Bebas Neue', sans-serif; font-size: 28px; color: var(--accent); }
+
+    .stars-row { display: flex; justify-content: center; gap: 12px; margin: 20px 0; }
+    .star-btn { font-size: 36px; cursor: pointer; transition: transform 0.15s; filter: grayscale(1) opacity(0.4); }
+    .star-btn.lit { filter: none; }
+    .star-btn:hover { transform: scale(1.2); }
+
+    .rate-btn {
+      background: var(--accent);
+      color: #000;
+      border: none;
+      padding: 18px;
+      border-radius: var(--radius);
+      font-family: 'Outfit', sans-serif;
+      font-size: 16px;
+      font-weight: 700;
+      width: 100%;
+      cursor: pointer;
+      margin-top: 8px;
+      transition: all 0.2s;
+    }
+    .rate-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(245,197,24,0.4); }
+
+    /* NAV */
+    .bottom-nav {
+      position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+      width: 100%; max-width: 420px;
+      background: rgba(19,19,26,0.95);
+      backdrop-filter: blur(16px);
+      border-top: 1px solid var(--border);
+      display: flex; justify-content: space-around;
+      padding: 10px 0 20px;
+      z-index: 100;
+    }
+    .nav-item {
+      display: flex; flex-direction: column; align-items: center; gap: 4px;
+      cursor: pointer; padding: 4px 16px;
+      transition: color 0.2s;
+      color: var(--muted);
+    }
+    .nav-item.active { color: var(--accent); }
+    .nav-icon { font-size: 20px; }
+    .nav-label { font-size: 10px; letter-spacing: 1px; text-transform: uppercase; }
+    
+    /* Scrollable screen content */
+    .scroll-content { flex: 1; overflow-y: auto; padding-bottom: 80px; }
+    .scroll-content::-webkit-scrollbar { display: none; }
+  </style>
+</head>
+<body>
+<div class="phone">
+
+  <!-- SPLASH -->
+  <div class="screen active" id="splash">
+    <div class="splash-logo">
+      <div class="bike-icon">🛵</div>
+      <div class="logo-text">GRABU</div>
+      <div class="tagline">Ride Fast · Ride Smart</div>
+      <button class="splash-btn" onclick="goTo('home')">GET STARTED</button>
+      <div class="dots" style="justify-content:center; margin-top:24px;">
+        <div class="dot active"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- HOME -->
+  <div class="screen" id="home">
+    <div class="scroll-content">
+      <div class="home-header">
+        <div class="header-row">
+          <div>
+            <div class="greeting">Good Morning 👋</div>
+            <div class="name">Hey, <span>Rider!</span></div>
+          </div>
+          <div class="avatar">R</div>
+        </div>
+      </div>
+
+      <!-- Map -->
+      <div class="map-area" style="margin:0 20px 0;">
+        <div class="map-grid"></div>
+        <div class="map-road-h" style="top:40%"></div>
+        <div class="map-road-h" style="top:70%"></div>
+        <div class="map-road-v" style="left:35%"></div>
+        <div class="map-road-v" style="left:70%"></div>
+        <div class="map-route"></div>
+        <div class="map-pin you">📍</div>
+        <div class="map-pin dest">🏁</div>
+        <div class="map-moving-bike">🛵</div>
+        <div class="map-label"><div class="live-dot"></div> 12 drivers nearby</div>
+      </div>
+
+      <!-- Location -->
+      <div class="location-bar">
+        <div class="loc-row" onclick="document.getElementById('dest-input').focus()">
+          <div class="loc-dot green"></div>
+          <div class="loc-text">
+            <div class="loc-label">Pickup</div>
+            <div class="loc-value">📍 Current Location</div>
+          </div>
+        </div>
+        <div class="loc-row">
+          <div class="loc-dot red"></div>
+          <div class="loc-text">
+            <div class="loc-label">Drop-off</div>
+            <input id="dest-input" placeholder="Where to?" style="background:transparent;border:none;color:var(--text);font-family:'Outfit',sans-serif;font-size:14px;font-weight:500;width:100%;outline:none;" />
+          </div>
+          <div class="loc-arrow">›</div>
+        </div>
+      </div>
+
+      <!-- Promo -->
+      <div class="promo-bar" style="margin-top:16px;">
+        <div class="promo-icon">🎁</div>
+        <div class="promo-text">
+          <div class="promo-title">First ride FREE!</div>
+          <div class="promo-sub">Use code below at checkout</div>
+        </div>
+        <div class="promo-code">GRABU1</div>
+      </div>
+
+      <!-- Ride Options -->
+      <div class="section-title">Choose Your Ride</div>
+      <div class="rides-grid">
+        <div class="ride-card selected" onclick="selectRide(this,'₹35–55','3 min')">
+          <div class="ride-icon">🛵</div>
+          <div class="ride-name">Bike</div>
+          <div class="ride-price">₹35–55</div>
+          <div class="ride-eta">~3 min</div>
+        </div>
+        <div class="ride-card" onclick="selectRide(this,'₹80–110','6 min')">
+          <div class="ride-icon">🛺</div>
+          <div class="ride-name">Auto</div>
+          <div class="ride-price">₹80–110</div>
+          <div class="ride-eta">~6 min</div>
+        </div>
+        <div class="ride-card" onclick="selectRide(this,'₹150–200','9 min')">
+          <div class="ride-icon">🚗</div>
+          <div class="ride-name">Cab</div>
+          <div class="ride-price">₹150–200</div>
+          <div class="ride-eta">~9 min</div>
+        </div>
+      </div>
+
+      <button class="book-btn" id="bookBtn" onclick="startMatching()">
+        🛵 Book Ride Now
+      </button>
+    </div>
+
+    <div class="bottom-nav">
+      <div class="nav-item active"><div class="nav-icon">🏠</div><div class="nav-label">Home</div></div>
+      <div class="nav-item"><div class="nav-icon">📋</div><div class="nav-label">Trips</div></div>
+      <div class="nav-item"><div class="nav-icon">🎁</div><div class="nav-label">Offers</div></div>
+      <div class="nav-item"><div class="nav-icon">👤</div><div class="nav-label">Profile</div></div>
+    </div>
+  </div>
+
+  <!-- MATCHING -->
+  <div class="screen" id="matching">
+    <div class="matching-bg"></div>
+    <div class="matching-content">
+      <div class="pulse-rings">
+        <div class="ring"></div>
+        <div class="ring"></div>
+        <div class="ring"></div>
+        <div class="center-bike">🛵</div>
+      </div>
+      <div class="matching-title">Finding Your Ride</div>
+      <div class="matching-sub">Matching you with nearby drivers...</div>
+
+      <div class="matching-steps" id="matchSteps">
+        <div class="m-step active" id="step1">
+          <div class="m-step-icon">📍</div>
+          <div class="m-step-text">Locating you...</div>
+          <div class="m-step-check"></div>
+        </div>
+        <div class="m-step" id="step2">
+          <div class="m-step-icon">🔍</div>
+          <div class="m-step-text">Searching nearby drivers</div>
+          <div class="m-step-check"></div>
+        </div>
+        <div class="m-step" id="step3">
+          <div class="m-step-icon">🤝</div>
+          <div class="m-step-text">Confirming driver</div>
+          <div class="m-step-check"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DRIVER FOUND -->
+  <div class="screen" id="driver">
+    <div class="scroll-content">
+      <div class="driver-header">
+        <div class="trip-label">Driver Assigned</div>
+        <div class="trip-status">🟢 ON THE WAY</div>
+      </div>
+
+      <div class="driver-card">
+        <div class="driver-top">
+          <div class="driver-avatar">👨</div>
+          <div class="driver-info">
+            <div class="driver-name">Rajan Kumar</div>
+            <div class="driver-meta">
+              <span class="star">★</span> 4.9
+              <span>· 2,341 rides</span>
+            </div>
+          </div>
+          <div class="driver-badge">VERIFIED</div>
+        </div>
+        <div class="bike-info">
+          <div class="bike-icon-sm">🛵</div>
+          <div class="bike-details">
+            <div class="bike-model">Honda Activa 6G</div>
+            <div class="bike-plate">TN 09 AB 1234</div>
+          </div>
+        </div>
+        <div class="eta-strip">
+          <div class="eta-item">
+            <div class="eta-val" id="etaMin">3</div>
+            <div class="eta-label">Min Away</div>
+          </div>
+          <div class="eta-divider"></div>
+          <div class="eta-item">
+            <div class="eta-val">2.4</div>
+            <div class="eta-label">KM Away</div>
+          </div>
+          <div class="eta-divider"></div>
+          <div class="eta-item">
+            <div class="eta-val">₹48</div>
+            <div class="eta-label">Fare</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="action-row">
+        <div class="action-btn">
+          <div class="action-icon">📞</div>
+          <div class="action-label">Call Driver</div>
+        </div>
+        <div class="action-btn">
+          <div class="action-icon">💬</div>
+          <div class="action-label">Message</div>
+        </div>
+        <div class="action-btn">
+          <div class="action-icon">🔗</div>
+          <div class="action-label">Share Trip</div>
+        </div>
+      </div>
+
+      <!-- Track map -->
+      <div class="track-map">
+        <div class="map-grid"></div>
+        <div class="track-pin" style="left:25%;top:60%">📍</div>
+        <div class="track-pin" style="left:72%;top:25%">🏁</div>
+        <div class="track-bike">🛵</div>
+      </div>
+
+      <button class="book-btn" style="background:var(--green);box-shadow:0 8px 24px rgba(34,197,94,0.3);" onclick="goTo('rating')">
+        ✅ Complete Trip
+      </button>
+      <button class="cancel-btn" onclick="goTo('home')">Cancel Ride</button>
+    </div>
+  </div>
+
+  <!-- RATING -->
+  <div class="screen" id="rating">
+    <div class="rating-content">
+      <div class="success-icon">🎉</div>
+      <div class="rating-title">Trip Complete!</div>
+      <div class="rating-sub">You've arrived safely. How was your ride?</div>
+
+      <div class="trip-summary">
+        <div class="summary-row">
+          <div class="summary-label">Distance</div>
+          <div class="summary-val">4.2 km</div>
+        </div>
+        <div class="summary-row">
+          <div class="summary-label">Duration</div>
+          <div class="summary-val">14 mins</div>
+        </div>
+        <div class="summary-row">
+          <div class="summary-label">Driver</div>
+          <div class="summary-val">Rajan Kumar</div>
+        </div>
+        <div class="summary-row">
+          <div class="summary-label">Total Paid</div>
+          <div class="summary-val big">₹48</div>
+        </div>
+      </div>
+
+      <div style="font-size:13px; color:var(--muted); margin-top:4px;">Rate your experience</div>
+      <div class="stars-row" id="starsRow">
+        <span class="star-btn" onclick="rateStar(1)">⭐</span>
+        <span class="star-btn" onclick="rateStar(2)">⭐</span>
+        <span class="star-btn lit" onclick="rateStar(3)">⭐</span>
+        <span class="star-btn lit" onclick="rateStar(4)">⭐</span>
+        <span class="star-btn lit" onclick="rateStar(5)">⭐</span>
+      </div>
+
+      <button class="rate-btn" onclick="goTo('home')">Submit & Book Another 🛵</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  function goTo(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    window.scrollTo(0, 0);
+  }
+
+  function selectRide(el, price, eta) {
+    document.querySelectorAll('.ride-card').forEach(c => c.classList.remove('selected'));
+    el.classList.add('selected');
+  }
+
+  function startMatching() {
+    goTo('matching');
+    const steps = ['step1','step2','step3'];
+    let i = 0;
+    function nextStep() {
+      if (i < steps.length) {
+        const el = document.getElementById(steps[i]);
+        el.classList.remove('active');
+        el.classList.add('done');
+        el.querySelector('.m-step-check').textContent = '✅';
+        i++;
+        if (i < steps.length) {
+          document.getElementById(steps[i]).classList.add('active');
+        }
+        setTimeout(nextStep, 1200);
+      } else {
+        setTimeout(() => goTo('driver'), 800);
+      }
+    }
+    document.getElementById(steps[0]).classList.add('active');
+    setTimeout(nextStep, 1000);
+
+    // countdown ETA
+    let eta = 3;
+    const etaEl = document.getElementById('etaMin');
+    const etaTimer = setInterval(() => {
+      if (eta > 1) { eta--; etaEl.textContent = eta; }
+      else clearInterval(etaTimer);
+    }, 8000);
+  }
+
+  function rateStar(n) {
+    document.querySelectorAll('.star-btn').forEach((s, i) => {
+      s.classList.toggle('lit', i < n);
+    });
+  }
+</script>
+</body>
+</html>
